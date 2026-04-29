@@ -21,7 +21,17 @@
         .cor-moto { color: #f39c12 !important; }
         .cor-cartao { color: #e74c3c !important; }
         .cor-patrimonio { color: #2ecc71 !important; }
-        .cor-padrao { color: #333 !important; } /* Cor para o Total da Obra */
+        .cor-padrao { color: #333 !important; } 
+
+        /* NOVAS CORES COM CONTORNO (MOTO PORTUGAL) */
+        .cor-moto-alerta { 
+            color: #ffff00 !important; 
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; 
+        }
+        .cor-moto-sucesso { 
+            color: #2ecc71 !important; 
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; 
+        }
         
         .container-chart { background: white; padding: 15px; border-radius: 15px; margin-top: 15px; }
         h3 { font-size: 13px; margin: 0 0 12px 0; color: #666; text-align: center; font-weight: 700; border-bottom: 1px solid #eee; padding-bottom: 5px; }
@@ -35,19 +45,19 @@
         <div id="patrimonio" class="valor cor-patrimonio">...</div>
     </div>
 
-    <!-- CARTÃO (VALOR EM VERMELHO) -->
+    <!-- CARTÃO -->
     <div class="banner b-cartao">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=D43" target="_blank" class="label-link">Total Gasto Cartões (D43) 🔗</a>
         <div id="totalCartao" class="valor cor-cartao">...</div>
     </div>
 
-    <!-- MOTO (VALOR EM LARANJA) -->
+    <!-- MOTO (DINÂMICO) -->
     <div class="banner b-moto">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=I64" target="_blank" class="label-link">Total da Moto PT (I64) 🔗</a>
         <div id="totalMoto" class="valor cor-moto">...</div>
     </div>
 
-    <!-- OBRA (VALOR PADRÃO + PEDREIRO) -->
+    <!-- OBRA -->
     <div class="banner b-obra">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=A116" target="_blank" class="label-link">Total Geral Obra (A116) 🔗</a>
         <div id="totalObra" class="valor cor-padrao">...</div>
@@ -80,11 +90,28 @@
                 // Preenchimento dos Banners
                 document.getElementById('patrimonio').innerText = formatarLimpo(linhas[68][2]); // C69
                 document.getElementById('totalCartao').innerText = formatarLimpo(linhas[42][3]); // D43
-                document.getElementById('totalMoto').innerText = formatarLimpo(linhas[63][8]);  // I64
                 document.getElementById('totalObra').innerText = formatarLimpo(linhas[115][0]); // A116
+                document.getElementById('pedreiro').innerText = formatarLimpo(linhas[101][0]); // A102
+
+                // --- LÓGICA DINÂMICA DA MOTO ---
+                const valorMotoTexto = linhas[63][8]; // I64
+                const elementoMoto = document.getElementById('totalMoto');
+                elementoMoto.innerText = formatarLimpo(valorMotoTexto);
+
+                // Converter para número para testar as faixas
+                let numMoto = valorMotoTexto.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+                numMoto = parseFloat(numMoto) || 0;
+
+                // Reset de classes e aplicação das novas regras
+                elementoMoto.classList.remove('cor-moto', 'cor-moto-alerta', 'cor-moto-sucesso');
                 
-                // Pedreiro A102 (Linha índice 101, Coluna A índice 0)
-                document.getElementById('pedreiro').innerText = formatarLimpo(linhas[101][0]);
+                if (numMoto > 0 && numMoto <= 300) {
+                    elementoMoto.classList.add('cor-moto-sucesso'); // Verde com borda
+                } else if (numMoto > 300 && numMoto <= 700) {
+                    elementoMoto.classList.add('cor-moto-alerta');  // Amarelo com borda
+                } else {
+                    elementoMoto.classList.add('cor-moto');         // Laranja padrão
+                }
 
                 // Gráfico
                 const labelsC = []; const valoresC = [];
