@@ -3,48 +3,66 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financeiro Pro</title>
+    <title>Painel Financeiro Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; color: #333; }
-        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; }
-        .label-link { font-size: 11px; color: #007AFF; text-transform: uppercase; font-weight: bold; text-decoration: none; display: block; margin-bottom: 8px; }
-        .valor { font-size: 20px; font-weight: 800; margin-bottom: 5px; }
+        body { font-family: -apple-system, sans-serif; background: #f4f7f9; margin: 0; padding: 15px; color: #333; }
+        .banner { background: white; padding: 18px; border-radius: 15px; box-shadow: 0 3px 6px rgba(0,0,0,0.08); margin-bottom: 12px; border-left: 6px solid #ccc; }
+        .label-link { font-size: 11px; color: #007AFF; text-transform: uppercase; font-weight: 800; text-decoration: none; display: block; margin-bottom: 5px; }
+        .valor { font-size: 24px; font-weight: 900; }
+        
+        /* Cores dos Banners */
+        .b-patrimonio { border-left-color: #2ecc71; }
+        .b-cartao { border-left-color: #e74c3c; }
+        .b-obra { border-left-color: #f1c40f; }
+        .b-sobrou { border-left-color: #3498db; }
+
         .destaque-negativo { color: #e74c3c; }
         .destaque-positivo { color: #2ecc71; }
-        .negrito-verde { font-weight: 900; color: #000; font-size: 17px; }
-        canvas { width: 100% !important; max-height: 250px; }
-        h3 { font-size: 14px; margin: 10px 0; color: #555; text-align: center; }
+        
+        h3 { font-size: 14px; margin: 15px 0 10px 0; color: #666; text-align: center; font-weight: 700; }
+        .container-chart { background: white; padding: 15px; border-radius: 15px; margin-bottom: 12px; }
+        canvas { width: 100% !important; }
     </style>
 </head>
 <body>
 
-    <div class="card">
+    <div class="banner b-patrimonio">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=C69" target="_blank" class="label-link">Patrimônio Total (C69) 🔗</a>
         <div id="patrimonio" class="valor destaque-positivo">...</div>
     </div>
 
-    <div class="card">
-        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=D43" target="_blank" class="label-link">Gasto Cartões (D43) 🔗</a>
-        <h3>Detalhamento por Banco</h3>
+    <div class="banner b-cartao">
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=D43" target="_blank" class="label-link">Total Gasto Cartões (D43) 🔗</a>
+        <div id="totalCartao" class="valor destaque-negativo">...</div>
+    </div>
+
+    <div class="container-chart">
+        <h3>Detalhamento por Banco (A30:D42)</h3>
         <canvas id="chartCartoes"></canvas>
     </div>
 
-    <div class="card">
-        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=E25" target="_blank" class="label-link">Resumo Gastos (B10-E24) 🔗</a>
-        <h3>Gastos vs Abatimentos</h3>
+    <div class="banner b-sobrou">
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=E25" target="_blank" class="label-link">Saldo Final do Mês (E25) 🔗</a>
+        <div id="sobrou" class="valor">...</div>
+    </div>
+
+    <div class="container-chart">
+        <h3>Resumo de Gastos (B10:E24)</h3>
         <canvas id="chartGastosFixos"></canvas>
     </div>
 
-    <div class="card" style="border-left: 5px solid #f1c40f;">
-        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=A102" target="_blank" class="label-link">Obra: Só Pedreiro (A102) 🔗</a>
-        <div id="pedreiro" class="negrito-verde">...</div>
+    <div class="banner b-obra">
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=A116" target="_blank" class="label-link">Total Geral Obra (A116) 🔗</a>
+        <div id="totalObra" class="valor" style="color: #000;">...</div>
+        <div style="margin-top: 10px; font-size: 13px; font-weight: 700;">
+            SÓ PEDREIRO (A102): <span id="pedreiro" style="color: #d35400;">...</span>
+        </div>
     </div>
 
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg-jvZpdnoDiKmf-UK2vqyyvndNZ-aYgdh3-KIcwwO_HwHclFraXE5Kp6XQGBlQU4XRvVQ8Qk6colM/pub?gid=1125809191&single=true&output=csv';
 
-        // Função para converter texto da planilha em número real que o gráfico entende
         function tratarNumero(texto) {
             if (!texto) return 0;
             let n = texto.replace(/[R$\s"']/g, '').replace('.', '').replace(',', '.');
@@ -54,67 +72,63 @@
         function formatarMoeda(texto) {
             if (!texto) return "R$ 0,00";
             let limpo = texto.replace(/[R$\s"']/g, '').trim();
+            if(limpo.includes('-')) return "R$ " + limpo;
             return "R$ " + limpo;
         }
 
         async function init() {
-            const resp = await fetch(csvUrl);
-            const data = await resp.text();
-            const linhas = data.split('\n').map(l => l.split(','));
+            try {
+                const resp = await fetch(csvUrl);
+                const data = await resp.text();
+                const linhas = data.split('\n').map(l => l.split(','));
 
-            // 1. Preencher Valores de Texto
-            document.getElementById('patrimonio').innerText = formatarMoeda(linhas[68][2]); // C69
-            document.getElementById('pedreiro').innerText = formatarMoeda(linhas[101][0]); // A102
+                // PREENCHIMENTO DOS BANNERS
+                document.getElementById('patrimonio').innerText = formatarMoeda(linhas[68][2]); // C69
+                document.getElementById('totalCartao').innerText = formatarMoeda(linhas[42][3]); // D43
+                document.getElementById('totalObra').innerText = formatarMoeda(linhas[115][0]); // A116
+                document.getElementById('pedreiro').innerText = formatarMoeda(linhas[101][0]); // A102
 
-            // 2. Gráfico de Cartões (A30-A42 e D30-D42)
-            const labelsCartao = [];
-            const valoresCartao = [];
-            for(let i=29; i<=41; i++) {
-                if(linhas[i][0]) { // Se tiver nome do banco na coluna A
-                    labelsCartao.push(linhas[i][0]);
-                    valoresCartao.push(tratarNumero(linhas[i][3])); // Coluna D
+                const vSobrou = linhas[24][4]; // E25
+                const elSobrou = document.getElementById('sobrou');
+                elSobrou.innerText = formatarMoeda(vSobrou);
+                elSobrou.className = vSobrou.includes('-') ? 'valor destaque-negativo' : 'valor destaque-positivo';
+
+                // GRÁFICO 1: CARTÕES (A30-A42 e D30-D42)
+                const labelsC = []; const valoresC = [];
+                for(let i=29; i<=41; i++) {
+                    if(linhas[i][0] && linhas[i][0].trim() !== "") {
+                        labelsC.push(linhas[i][0].trim());
+                        valoresC.push(tratarNumero(linhas[i][3]));
+                    }
                 }
-            }
+                new Chart(document.getElementById('chartCartoes'), {
+                    type: 'bar',
+                    data: {
+                        labels: labelsC,
+                        datasets: [{ data: valoresC, backgroundColor: '#e74c3c', borderRadius: 6 }]
+                    },
+                    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                });
 
-            new Chart(document.getElementById('chartCartoes'), {
-                type: 'bar',
-                data: {
-                    labels: labelsCartao,
-                    datasets: [{
-                        label: 'R$',
-                        data: valoresCartao,
-                        backgroundColor: '#e74c3c',
-                        borderRadius: 5
-                    }]
-                },
-                options: { plugins: { legend: { display: false } } }
-            });
-
-            // 3. Gráfico de Gastos Fixos (B10-B24 e E10-E24)
-            const labelsFixos = [];
-            const valoresFixos = [];
-            for(let i=9; i<=23; i++) {
-                if(linhas[i][1]) { // Se tiver nome na coluna B
-                    labelsFixos.push(linhas[i][1]);
-                    valoresFixos.push(tratarNumero(linhas[i][4])); // Coluna E
+                // GRÁFICO 2: GASTOS FIXOS (B10-B24 e E10-E24)
+                const labelsG = []; const valoresG = [];
+                for(let i=9; i<=23; i++) {
+                    if(linhas[i][1] && linhas[i][1].trim() !== "") {
+                        labelsG.push(linhas[i][1].trim());
+                        valoresG.push(tratarNumero(linhas[i][4]));
+                    }
                 }
-            }
+                new Chart(document.getElementById('chartGastosFixos'), {
+                    type: 'bar',
+                    data: {
+                        labels: labelsG,
+                        datasets: [{ data: valoresG, backgroundColor: '#3498db', borderRadius: 6 }]
+                    },
+                    options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+                });
 
-            new Chart(document.getElementById('chartGastosFixos'), {
-                type: 'bar',
-                data: {
-                    labels: labelsFixos,
-                    datasets: [{
-                        label: 'Saldo',
-                        data: valoresFixos,
-                        backgroundColor: valoresFixos.map(v => v < 0 ? '#e74c3c' : '#2ecc71'),
-                        borderRadius: 5
-                    }]
-                },
-                options: { indexAxis: 'y', plugins: { legend: { display: false } } }
-            });
+            } catch (e) { console.error(e); }
         }
-
         init();
     </script>
 </body>
