@@ -26,40 +26,36 @@
 </head>
 <body>
 
-    <!-- PATRIMÔNIO -->
+    <!-- BLOCO DE BANNERS -->
     <div class="banner b-patrimonio">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=C69" target="_blank" class="label-link">Patrimônio Total (C69) 🔗</a>
         <div id="patrimonio" class="valor">...</div>
     </div>
 
-    <!-- CARTÕES -->
     <div class="banner b-cartao">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=D43" target="_blank" class="label-link">Total Gasto Cartões (D43) 🔗</a>
         <div id="totalCartao" class="valor negativo">...</div>
     </div>
 
-    <!-- MOTO -->
     <div class="banner b-moto">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=I64" target="_blank" class="label-link">Total da Moto PT (I64) 🔗</a>
         <div id="totalMoto" class="valor">...</div>
     </div>
 
-    <!-- OBRA -->
     <div class="banner b-obra">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=A116" target="_blank" class="label-link">Total Geral Obra (A116) 🔗</a>
         <div id="totalObra" class="valor">...</div>
     </div>
 
-    <!-- DIAS ÚTEIS (H45) -->
     <div class="banner b-info">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=H45" target="_blank" class="label-link">Dias Úteis Nesse Mês (H45) 🔗</a>
         <div id="diasUteis" class="valor" style="color: #2c3e50;">...</div>
     </div>
 
-    <!-- RENDIMENTO CDB (O24) -->
+    <!-- NOVO BANNER CDB REINICIADO -->
     <div class="banner b-info">
-        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=O24" target="_blank" class="label-link">Rendimento CDB Mês (O24) 🔗</a>
-        <div id="rendimentoCDB" class="valor positivo">...</div>
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=O24" target="_blank" class="label-link">Rend. CDB Mês (O24) 🔗</a>
+        <div id="rendCDB" class="valor positivo">...</div>
     </div>
 
     <!-- GRÁFICO -->
@@ -92,17 +88,15 @@
                 const data = await resp.text();
                 const linhas = data.split('\n').map(l => l.split(','));
 
-                // Banners Atualizados
+                // Atualização dos Banners
                 document.getElementById('patrimonio').innerText = formatarValor(linhas[68][2], 'patrimonio'); 
                 document.getElementById('totalCartao').innerText = formatarValor(linhas[42][3], 'totalCartao'); 
                 document.getElementById('totalMoto').innerText = formatarValor(linhas[63][8], 'totalMoto'); 
                 document.getElementById('totalObra').innerText = formatarValor(linhas[115][0], 'totalObra'); 
-                
-                // H45 (Linha índice 44, Coluna H índice 7)
                 document.getElementById('diasUteis').innerText = formatarValor(linhas[44][7], 'diasUteis', false); 
                 
-                // O24 (Linha índice 23, Coluna O índice 14)
-                document.getElementById('rendimentoCDB').innerText = formatarValor(linhas[23][14], 'rendimentoCDB'); 
+                // Leitura da O24 (Linha índice 23, Coluna O índice 14)
+                document.getElementById('rendCDB').innerText = formatarValor(linhas[23][14], 'rendCDB'); 
 
                 // Gráfico
                 const labelsC = []; const valoresC = [];
