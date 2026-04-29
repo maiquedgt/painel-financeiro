@@ -26,7 +26,6 @@
 </head>
 <body>
 
-    <!-- BLOCO DE BANNERS -->
     <div class="banner b-patrimonio">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=C69" target="_blank" class="label-link">Patrimônio Total (C69) 🔗</a>
         <div id="patrimonio" class="valor">...</div>
@@ -52,13 +51,12 @@
         <div id="diasUteis" class="valor" style="color: #2c3e50;">...</div>
     </div>
 
-    <!-- NOVO BANNER CDB REINICIADO -->
+    <!-- BANNER TRANSFERIDO PARA H44 -->
     <div class="banner b-info">
-        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=O24" target="_blank" class="label-link">Rend. CDB Mês (O24) 🔗</a>
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=H44" target="_blank" class="label-link">Rend. CDB Mês (H44) 🔗</a>
         <div id="rendCDB" class="valor positivo">...</div>
     </div>
 
-    <!-- GRÁFICO -->
     <div class="container-chart">
         <h3>Detalhamento por Banco (A30:D42)</h3>
         <canvas id="chartCartoes"></canvas>
@@ -88,17 +86,15 @@
                 const data = await resp.text();
                 const linhas = data.split('\n').map(l => l.split(','));
 
-                // Atualização dos Banners
                 document.getElementById('patrimonio').innerText = formatarValor(linhas[68][2], 'patrimonio'); 
                 document.getElementById('totalCartao').innerText = formatarValor(linhas[42][3], 'totalCartao'); 
                 document.getElementById('totalMoto').innerText = formatarValor(linhas[63][8], 'totalMoto'); 
                 document.getElementById('totalObra').innerText = formatarValor(linhas[115][0], 'totalObra'); 
                 document.getElementById('diasUteis').innerText = formatarValor(linhas[44][7], 'diasUteis', false); 
                 
-                // Leitura da O24 (Linha índice 23, Coluna O índice 14)
-                document.getElementById('rendCDB').innerText = formatarValor(linhas[23][14], 'rendCDB'); 
+                // LEITURA DA H44 (Linha índice 43, Coluna H índice 7)
+                document.getElementById('rendCDB').innerText = formatarValor(linhas[43][7], 'rendCDB'); 
 
-                // Gráfico
                 const labelsC = []; const valoresC = [];
                 for(let i=29; i<=41; i++) {
                     if(linhas[i] && linhas[i][0]) {
@@ -116,7 +112,7 @@
                     options: { plugins: { legend: { display: false } } }
                 });
 
-            } catch (e) { console.error("Erro ao carregar dados:", e); }
+            } catch (e) { console.error("Erro:", e); }
         }
         init();
     </script>
