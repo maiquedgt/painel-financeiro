@@ -3,127 +3,119 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Financeiro Digital</title>
+    <title>Financeiro Pro</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
-        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 10px; }
-        
-        /* Estilo para deixar os nomes com cara de link clicável */
-        .label-link { 
-            font-size: 11px; 
-            color: #007AFF; 
-            text-transform: uppercase; 
-            letter-spacing: 0.5px; 
-            text-decoration: none;
-            display: inline-block;
-            margin-bottom: 5px;
-        }
-        .label-link:active { opacity: 0.5; }
-
-        .valor { font-size: 19px; font-weight: bold; color: #333; }
-        .destaque-negativo { color: #e74c3c !important; }
-        .destaque-positivo { color: #2ecc71 !important; }
-        .obra { border-left: 5px solid #f1c40f; }
-        .negrito-verde { font-weight: 900; color: #000; font-size: 16px; }
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; color: #333; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 15px; }
+        .label-link { font-size: 11px; color: #007AFF; text-transform: uppercase; font-weight: bold; text-decoration: none; display: block; margin-bottom: 8px; }
+        .valor { font-size: 20px; font-weight: 800; margin-bottom: 5px; }
+        .destaque-negativo { color: #e74c3c; }
+        .destaque-positivo { color: #2ecc71; }
+        .negrito-verde { font-weight: 900; color: #000; font-size: 17px; }
+        canvas { width: 100% !important; max-height: 250px; }
+        h3 { font-size: 14px; margin: 10px 0; color: #555; text-align: center; }
     </style>
 </head>
 <body>
 
-    <!-- Link para a célula C69 -->
     <div class="card">
-        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=C69" target="_blank" class="label-link">PATRIMÔNIO TOTAL (C69) 🔗</a>
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=C69" target="_blank" class="label-link">Patrimônio Total (C69) 🔗</a>
         <div id="patrimonio" class="valor destaque-positivo">...</div>
     </div>
 
-    <div class="grid">
-        <!-- Link para a célula D43 -->
-        <div class="card">
-            <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=D43" target="_blank" class="label-link">CARTÕES (D43) 🔗</a>
-            <div id="gastosCartao" class="valor destaque-negativo">...</div>
-        </div>
-        <!-- Link para a célula E25 -->
-        <div class="card">
-            <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=E25" target="_blank" class="label-link">SOBROU (E25) 🔗</a>
-            <div id="sobrou" class="valor">...</div>
-        </div>
-    </div>
-
-    <div class="card obra">
-        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=A116" target="_blank" class="label-link">TOTAL OBRA (A116) 🔗</a>
-        <div id="totalObra" class="valor" style="color: #000;">...</div>
-        
-        <div style="margin-top:15px;">
-            <!-- Link para a célula A102 -->
-            <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=A102" target="_blank" class="label-link">SÓ PEDREIRO (A102) 🔗</a>
-            <br>
-            <span id="pedreiro" class="negrito-verde">...</span>
-        </div>
+    <div class="card">
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=D43" target="_blank" class="label-link">Gasto Cartões (D43) 🔗</a>
+        <h3>Detalhamento por Banco</h3>
+        <canvas id="chartCartoes"></canvas>
     </div>
 
     <div class="card">
-        <canvas id="graficoResumo" style="max-height: 180px;"></canvas>
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=E25" target="_blank" class="label-link">Resumo Gastos (B10-E24) 🔗</a>
+        <h3>Gastos vs Abatimentos</h3>
+        <canvas id="chartGastosFixos"></canvas>
+    </div>
+
+    <div class="card" style="border-left: 5px solid #f1c40f;">
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=A102" target="_blank" class="label-link">Obra: Só Pedreiro (A102) 🔗</a>
+        <div id="pedreiro" class="negrito-verde">...</div>
     </div>
 
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg-jvZpdnoDiKmf-UK2vqyyvndNZ-aYgdh3-KIcwwO_HwHclFraXE5Kp6XQGBlQU4XRvVQ8Qk6colM/pub?gid=1125809191&single=true&output=csv';
 
-        async function fetchData() {
-            try {
-                const resp = await fetch(csvUrl);
-                const csv = await resp.text();
-                const linhas = csv.split('\n').map(l => l.split(','));
-
-                const limparMoeda = (texto) => {
-                    if (!texto) return "R$ 0,00";
-                    let limpo = texto.replace(/[R$\s"']/g, '').trim();
-                    return "R$ " + limpo;
-                };
-
-                // Mapeamento das células
-                const valPatrimonio = linhas[68][2]; 
-                const valGastos     = linhas[42][3]; 
-                const valSobrou     = linhas[24][4]; 
-                const valTotalObra  = linhas[115][0]; 
-                const valPedreiro   = linhas[101][0]; 
-
-                document.getElementById('patrimonio').innerText = limparMoeda(valPatrimonio);
-                document.getElementById('gastosCartao').innerText = limparMoeda(valGastos);
-                document.getElementById('totalObra').innerText = limparMoeda(valTotalObra);
-                document.getElementById('pedreiro').innerText = limparMoeda(valPedreiro);
-
-                const campoSobrou = document.getElementById('sobrou');
-                campoSobrou.innerText = limparMoeda(valSobrou);
-                
-                if (valSobrou && valSobrou.includes('-')) {
-                    campoSobrou.classList.add('destaque-negativo');
-                } else {
-                    campoSobrou.classList.add('destaque-positivo');
-                }
-
-                // Gráfico simplificado
-                const ctx = document.getElementById('graficoResumo').getContext('2d');
-                new Chart(ctx, {
-                    type: 'bar',
-                    data: {
-                        labels: ['Cartão', 'Sobrou'],
-                        datasets: [{
-                            data: [
-                                parseFloat(valGastos.replace('.','').replace(',','.')) || 0,
-                                parseFloat(valSobrou.replace('.','').replace(',','.')) || 0
-                            ],
-                            backgroundColor: ['#e74c3c', '#3498db']
-                        }]
-                    },
-                    options: { plugins: { legend: { display: false } } }
-                });
-
-            } catch (error) {
-                console.error("Erro no carregamento:", error);
-            }
+        // Função para converter texto da planilha em número real que o gráfico entende
+        function tratarNumero(texto) {
+            if (!texto) return 0;
+            let n = texto.replace(/[R$\s"']/g, '').replace('.', '').replace(',', '.');
+            return parseFloat(n) || 0;
         }
-        fetchData();
+
+        function formatarMoeda(texto) {
+            if (!texto) return "R$ 0,00";
+            let limpo = texto.replace(/[R$\s"']/g, '').trim();
+            return "R$ " + limpo;
+        }
+
+        async function init() {
+            const resp = await fetch(csvUrl);
+            const data = await resp.text();
+            const linhas = data.split('\n').map(l => l.split(','));
+
+            // 1. Preencher Valores de Texto
+            document.getElementById('patrimonio').innerText = formatarMoeda(linhas[68][2]); // C69
+            document.getElementById('pedreiro').innerText = formatarMoeda(linhas[101][0]); // A102
+
+            // 2. Gráfico de Cartões (A30-A42 e D30-D42)
+            const labelsCartao = [];
+            const valoresCartao = [];
+            for(let i=29; i<=41; i++) {
+                if(linhas[i][0]) { // Se tiver nome do banco na coluna A
+                    labelsCartao.push(linhas[i][0]);
+                    valoresCartao.push(tratarNumero(linhas[i][3])); // Coluna D
+                }
+            }
+
+            new Chart(document.getElementById('chartCartoes'), {
+                type: 'bar',
+                data: {
+                    labels: labelsCartao,
+                    datasets: [{
+                        label: 'R$',
+                        data: valoresCartao,
+                        backgroundColor: '#e74c3c',
+                        borderRadius: 5
+                    }]
+                },
+                options: { plugins: { legend: { display: false } } }
+            });
+
+            // 3. Gráfico de Gastos Fixos (B10-B24 e E10-E24)
+            const labelsFixos = [];
+            const valoresFixos = [];
+            for(let i=9; i<=23; i++) {
+                if(linhas[i][1]) { // Se tiver nome na coluna B
+                    labelsFixos.push(linhas[i][1]);
+                    valoresFixos.push(tratarNumero(linhas[i][4])); // Coluna E
+                }
+            }
+
+            new Chart(document.getElementById('chartGastosFixos'), {
+                type: 'bar',
+                data: {
+                    labels: labelsFixos,
+                    datasets: [{
+                        label: 'Saldo',
+                        data: valoresFixos,
+                        backgroundColor: valoresFixos.map(v => v < 0 ? '#e74c3c' : '#2ecc71'),
+                        borderRadius: 5
+                    }]
+                },
+                options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+            });
+        }
+
+        init();
     </script>
 </body>
 </html>
