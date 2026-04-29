@@ -3,30 +3,32 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Painel Financeiro Pro</title>
+    <title>Painel Digital Suporte</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body { font-family: -apple-system, sans-serif; background: #f4f7f9; margin: 0; padding: 15px; color: #333; }
-        .banner { background: white; padding: 18px; border-radius: 15px; box-shadow: 0 3px 6px rgba(0,0,0,0.08); margin-bottom: 12px; border-left: 6px solid #ccc; }
-        .label-link { font-size: 11px; color: #007AFF; text-transform: uppercase; font-weight: 800; text-decoration: none; display: block; margin-bottom: 5px; }
-        .valor { font-size: 24px; font-weight: 900; }
+        .banner { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 10px; border-left: 6px solid #ccc; }
+        .label-link { font-size: 10px; color: #007AFF; text-transform: uppercase; font-weight: 800; text-decoration: none; display: block; margin-bottom: 4px; }
+        .valor { font-size: 22px; font-weight: 900; }
         
         /* Cores dos Banners */
         .b-patrimonio { border-left-color: #2ecc71; }
         .b-cartao { border-left-color: #e74c3c; }
-        .b-obra { border-left-color: #f1c40f; }
         .b-sobrou { border-left-color: #3498db; }
+        .b-obra { border-left-color: #f1c40f; }
 
         .destaque-negativo { color: #e74c3c; }
         .destaque-positivo { color: #2ecc71; }
         
-        h3 { font-size: 14px; margin: 15px 0 10px 0; color: #666; text-align: center; font-weight: 700; }
-        .container-chart { background: white; padding: 15px; border-radius: 15px; margin-bottom: 12px; }
+        .container-chart { background: white; padding: 15px; border-radius: 15px; margin-top: 15px; margin-bottom: 15px; }
+        h3 { font-size: 13px; margin: 0 0 12px 0; color: #666; text-align: center; font-weight: 700; border-bottom: 1px solid #eee; padding-bottom: 5px; }
         canvas { width: 100% !important; }
     </style>
 </head>
 <body>
 
+    <!-- SEÇÃO DE BANNERS (TUDO NO TOPO AGORA) -->
+    
     <div class="banner b-patrimonio">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=C69" target="_blank" class="label-link">Patrimônio Total (C69) 🔗</a>
         <div id="patrimonio" class="valor destaque-positivo">...</div>
@@ -37,32 +39,35 @@
         <div id="totalCartao" class="valor destaque-negativo">...</div>
     </div>
 
-    <div class="container-chart">
-        <h3>Detalhamento por Banco (A30:D42)</h3>
-        <canvas id="chartCartoes"></canvas>
-    </div>
-
     <div class="banner b-sobrou">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=E25" target="_blank" class="label-link">Saldo Final do Mês (E25) 🔗</a>
         <div id="sobrou" class="valor">...</div>
     </div>
 
-    <div class="container-chart">
-        <h3>Resumo de Gastos (B10:E24)</h3>
-        <canvas id="chartGastosFixos"></canvas>
-    </div>
-
     <div class="banner b-obra">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=A116" target="_blank" class="label-link">Total Geral Obra (A116) 🔗</a>
         <div id="totalObra" class="valor" style="color: #000;">...</div>
-        <div style="margin-top: 10px; font-size: 13px; font-weight: 700;">
+        <div style="margin-top: 8px; font-size: 13px; font-weight: 700;">
             SÓ PEDREIRO (A102): <span id="pedreiro" style="color: #d35400;">...</span>
         </div>
+    </div>
+
+    <!-- SEÇÃO DE GRÁFICOS (PARA BAIXO) -->
+
+    <div class="container-chart">
+        <h3>Detalhamento Cartões (A30-D42)</h3>
+        <canvas id="chartCartoes"></canvas>
+    </div>
+
+    <div class="container-chart">
+        <h3>Resumo de Gastos (B10-E24)</h3>
+        <canvas id="chartGastosFixos"></canvas>
     </div>
 
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg-jvZpdnoDiKmf-UK2vqyyvndNZ-aYgdh3-KIcwwO_HwHclFraXE5Kp6XQGBlQU4XRvVQ8Qk6colM/pub?gid=1125809191&single=true&output=csv';
 
+        // Converte o texto da planilha (ex: "1.200,50") em número para o gráfico
         function tratarNumero(texto) {
             if (!texto) return 0;
             let n = texto.replace(/[R$\s"']/g, '').replace('.', '').replace(',', '.');
@@ -72,7 +77,6 @@
         function formatarMoeda(texto) {
             if (!texto) return "R$ 0,00";
             let limpo = texto.replace(/[R$\s"']/g, '').trim();
-            if(limpo.includes('-')) return "R$ " + limpo;
             return "R$ " + limpo;
         }
 
@@ -82,7 +86,7 @@
                 const data = await resp.text();
                 const linhas = data.split('\n').map(l => l.split(','));
 
-                // PREENCHIMENTO DOS BANNERS
+                // Atualizando Banners (Células Únicas)
                 document.getElementById('patrimonio').innerText = formatarMoeda(linhas[68][2]); // C69
                 document.getElementById('totalCartao').innerText = formatarMoeda(linhas[42][3]); // D43
                 document.getElementById('totalObra').innerText = formatarMoeda(linhas[115][0]); // A116
@@ -93,11 +97,12 @@
                 elSobrou.innerText = formatarMoeda(vSobrou);
                 elSobrou.className = vSobrou.includes('-') ? 'valor destaque-negativo' : 'valor destaque-positivo';
 
-                // GRÁFICO 1: CARTÕES (A30-A42 e D30-D42)
+                // GRÁFICO 1: CARTÕES (Nomes em A30-A42, Valores em D30-D42)
                 const labelsC = []; const valoresC = [];
                 for(let i=29; i<=41; i++) {
-                    if(linhas[i][0] && linhas[i][0].trim() !== "") {
-                        labelsC.push(linhas[i][0].trim());
+                    let nome = linhas[i][0] ? linhas[i][0].trim() : "";
+                    if(nome !== "") {
+                        labelsC.push(nome);
                         valoresC.push(tratarNumero(linhas[i][3]));
                     }
                 }
@@ -105,29 +110,37 @@
                     type: 'bar',
                     data: {
                         labels: labelsC,
-                        datasets: [{ data: valoresC, backgroundColor: '#e74c3c', borderRadius: 6 }]
+                        datasets: [{ data: valoresC, backgroundColor: '#e74c3c', borderRadius: 4 }]
                     },
-                    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+                    options: { plugins: { legend: { display: false } } }
                 });
 
-                // GRÁFICO 2: GASTOS FIXOS (B10-B24 e E10-E24)
+                // GRÁFICO 2: GASTOS (Nomes em B10-B24, Valores em E10-E24)
                 const labelsG = []; const valoresG = [];
                 for(let i=9; i<=23; i++) {
-                    if(linhas[i][1] && linhas[i][1].trim() !== "") {
-                        labelsG.push(linhas[i][1].trim());
-                        valoresG.push(tratarNumero(linhas[i][4]));
+                    let nomeGasto = linhas[i][1] ? linhas[i][1].trim() : ""; // Coluna B
+                    if(nomeGasto !== "") {
+                        labelsG.push(nomeGasto);
+                        valoresG.push(tratarNumero(linhas[i][4])); // Coluna E (Valores Corretos)
                     }
                 }
                 new Chart(document.getElementById('chartGastosFixos'), {
                     type: 'bar',
                     data: {
                         labels: labelsG,
-                        datasets: [{ data: valoresG, backgroundColor: '#3498db', borderRadius: 6 }]
+                        datasets: [{ 
+                            data: valoresG, 
+                            backgroundColor: '#3498db',
+                            borderRadius: 4
+                        }]
                     },
-                    options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+                    options: { 
+                        indexAxis: 'y', // Gráfico Horizontal para ler melhor os nomes
+                        plugins: { legend: { display: false } } 
+                    }
                 });
 
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Erro ao carregar dados:", e); }
         }
         init();
     </script>
