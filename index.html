@@ -11,14 +11,17 @@
         .label-link { font-size: 10px; color: #007AFF; text-transform: uppercase; font-weight: 800; text-decoration: none; display: block; margin-bottom: 4px; }
         .valor { font-size: 22px; font-weight: 900; }
         
+        /* Cores das Bordas */
         .b-patrimonio { border-left-color: #2ecc71; }
         .b-cartao { border-left-color: #e74c3c; }
         .b-moto { border-left-color: #f39c12; }
         .b-obra { border-left-color: #7f8c8d; }
-        .b-info { border-left-color: #3498db; }
 
-        .negativo { color: #e74c3c !important; }
-        .positivo { color: #2ecc71 !important; }
+        /* Cores Específicas dos Valores */
+        .cor-moto { color: #f39c12 !important; }
+        .cor-cartao { color: #e74c3c !important; }
+        .cor-patrimonio { color: #2ecc71 !important; }
+        .cor-padrao { color: #333 !important; } /* Cor para o Total da Obra */
         
         .container-chart { background: white; padding: 15px; border-radius: 15px; margin-top: 15px; }
         h3 { font-size: 13px; margin: 0 0 12px 0; color: #666; text-align: center; font-weight: 700; border-bottom: 1px solid #eee; padding-bottom: 5px; }
@@ -26,37 +29,34 @@
 </head>
 <body>
 
+    <!-- PATRIMÔNIO -->
     <div class="banner b-patrimonio">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=C69" target="_blank" class="label-link">Patrimônio Total (C69) 🔗</a>
-        <div id="patrimonio" class="valor">...</div>
+        <div id="patrimonio" class="valor cor-patrimonio">...</div>
     </div>
 
+    <!-- CARTÃO (VALOR EM VERMELHO) -->
     <div class="banner b-cartao">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=D43" target="_blank" class="label-link">Total Gasto Cartões (D43) 🔗</a>
-        <div id="totalCartao" class="valor negativo">...</div>
+        <div id="totalCartao" class="valor cor-cartao">...</div>
     </div>
 
+    <!-- MOTO (VALOR EM LARANJA) -->
     <div class="banner b-moto">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=I64" target="_blank" class="label-link">Total da Moto PT (I64) 🔗</a>
-        <div id="totalMoto" class="valor">...</div>
+        <div id="totalMoto" class="valor cor-moto">...</div>
     </div>
 
+    <!-- OBRA (VALOR PADRÃO + PEDREIRO) -->
     <div class="banner b-obra">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=A116" target="_blank" class="label-link">Total Geral Obra (A116) 🔗</a>
-        <div id="totalObra" class="valor">...</div>
+        <div id="totalObra" class="valor cor-padrao">...</div>
+        <div style="margin-top: 8px; font-size: 13px; font-weight: 700;">
+            SÓ PEDREIRO (A102): <span id="pedreiro" style="color: #d35400;">...</span>
+        </div>
     </div>
 
-    <div class="banner b-info">
-        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=H45" target="_blank" class="label-link">Dias Úteis Nesse Mês (H45) 🔗</a>
-        <div id="diasUteis" class="valor" style="color: #2c3e50;">...</div>
-    </div>
-
-    <!-- BANNER TRANSFERIDO PARA H44 -->
-    <div class="banner b-info">
-        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=H44" target="_blank" class="label-link">Rend. CDB Mês (H44) 🔗</a>
-        <div id="rendCDB" class="valor positivo">...</div>
-    </div>
-
+    <!-- GRÁFICO -->
     <div class="container-chart">
         <h3>Detalhamento por Banco (A30:D42)</h3>
         <canvas id="chartCartoes"></canvas>
@@ -65,19 +65,10 @@
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg-jvZpdnoDiKmf-UK2vqyyvndNZ-aYgdh3-KIcwwO_HwHclFraXE5Kp6XQGBlQU4XRvVQ8Qk6colM/pub?gid=1125809191&single=true&output=csv';
 
-        function formatarValor(texto, elementoId, isMoeda = true) {
-            if (!texto || texto.trim() === "") return isMoeda ? "R$ 0,00" : "0";
-            let elemento = document.getElementById(elementoId);
-            let valorTexto = texto.trim();
-
-            if (valorTexto.includes('-')) {
-                elemento.classList.add('negativo');
-            } else if (isMoeda && elementoId !== 'totalObra') {
-                elemento.classList.add('positivo');
-            }
-            
-            if (!isMoeda) return valorTexto;
-            return valorTexto.includes('R$') ? valorTexto : "R$ " + valorTexto;
+        function formatarLimpo(texto) {
+            if (!texto || texto.trim() === "") return "R$ 0,00";
+            let valor = texto.trim();
+            return valor.includes('R$') ? valor : "R$ " + valor;
         }
 
         async function init() {
@@ -86,15 +77,16 @@
                 const data = await resp.text();
                 const linhas = data.split('\n').map(l => l.split(','));
 
-                document.getElementById('patrimonio').innerText = formatarValor(linhas[68][2], 'patrimonio'); 
-                document.getElementById('totalCartao').innerText = formatarValor(linhas[42][3], 'totalCartao'); 
-                document.getElementById('totalMoto').innerText = formatarValor(linhas[63][8], 'totalMoto'); 
-                document.getElementById('totalObra').innerText = formatarValor(linhas[115][0], 'totalObra'); 
-                document.getElementById('diasUteis').innerText = formatarValor(linhas[44][7], 'diasUteis', false); 
+                // Preenchimento dos Banners
+                document.getElementById('patrimonio').innerText = formatarLimpo(linhas[68][2]); // C69
+                document.getElementById('totalCartao').innerText = formatarLimpo(linhas[42][3]); // D43
+                document.getElementById('totalMoto').innerText = formatarLimpo(linhas[63][8]);  // I64
+                document.getElementById('totalObra').innerText = formatarLimpo(linhas[115][0]); // A116
                 
-                // LEITURA DA H44 (Linha índice 43, Coluna H índice 7)
-                document.getElementById('rendCDB').innerText = formatarValor(linhas[43][7], 'rendCDB'); 
+                // Pedreiro A102 (Linha índice 101, Coluna A índice 0)
+                document.getElementById('pedreiro').innerText = formatarLimpo(linhas[101][0]);
 
+                // Gráfico
                 const labelsC = []; const valoresC = [];
                 for(let i=29; i<=41; i++) {
                     if(linhas[i] && linhas[i][0]) {
@@ -112,7 +104,7 @@
                     options: { plugins: { legend: { display: false } } }
                 });
 
-            } catch (e) { console.error("Erro:", e); }
+            } catch (e) { console.error("Erro ao carregar dados:", e); }
         }
         init();
     </script>
