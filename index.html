@@ -21,13 +21,10 @@
         
         .container-chart { background: white; padding: 15px; border-radius: 15px; margin-top: 15px; }
         h3 { font-size: 13px; margin: 0 0 12px 0; color: #666; text-align: center; font-weight: 700; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        canvas { width: 100% !important; }
     </style>
 </head>
 <body>
 
-    <!-- SEQUÊNCIA DE BANNERS -->
-    
     <div class="banner b-patrimonio">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=C69" target="_blank" class="label-link">Patrimônio Total (C69) 🔗</a>
         <div id="patrimonio" class="valor">...</div>
@@ -40,19 +37,18 @@
 
     <div class="banner b-obra">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=A116" target="_blank" class="label-link">Total Geral Obra (A116) 🔗</a>
-        <div id="totalObra" class="valor" style="color: #000;">...</div>
+        <div id="totalObra" class="valor">...</div>
         <div style="margin-top: 8px; font-size: 13px; font-weight: 700;">
             SÓ PEDREIRO (A102): <span id="pedreiro" style="color: #d35400;">...</span>
         </div>
     </div>
 
-    <!-- BANNER ATUALIZADO: MENSAL PÓS CONTAS (E24) -->
+    <!-- BANNER MENSAL PÓS CONTAS -->
     <div class="banner b-e24">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=E24" target="_blank" class="label-link">Mensal Pós Contas (E24) 🔗</a>
         <div id="valorE24" class="valor">...</div>
     </div>
 
-    <!-- GRÁFICO -->
     <div class="container-chart">
         <h3>Detalhamento por Banco (A30:D42)</h3>
         <canvas id="chartCartoes"></canvas>
@@ -62,23 +58,20 @@
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg-jvZpdnoDiKmf-UK2vqyyvndNZ-aYgdh3-KIcwwO_HwHclFraXE5Kp6XQGBlQU4XRvVQ8Qk6colM/pub?gid=1125809191&single=true&output=csv';
 
         function formatarMoedaDinamica(texto, elementoId) {
-            if (!texto) return "R$ 0,00";
-            let valorLimpo = texto.replace(/[R$\s"']/g, '').trim();
-            let elemento = document.getElementById(elementoId);
+            if (!texto || texto.trim() === "") return "R$ 0,00";
             
-            if (valorLimpo.includes('-')) {
+            let elemento = document.getElementById(elementoId);
+            let valorTexto = texto.trim();
+
+            // Detecta se é negativo pelo sinal de menos vindo da planilha
+            if (valorTexto.includes('-')) {
                 elemento.classList.add('negativo');
-            } else if (elementoId === 'patrimonio' || elementoId === 'valorE24') {
+            } else if (elementoId !== 'totalObra' && elementoId !== 'totalCartao') {
                 elemento.classList.add('positivo');
             }
             
-            return "R$ " + valorLimpo;
-        }
-
-        function tratarNumero(texto) {
-            if (!texto) return 0;
-            let n = texto.replace(/[R$\s"']/g, '').replace(/\./g, '').replace(',', '.');
-            return parseFloat(n) || 0;
+            // Retorna o valor com R$ na frente, garantindo que o sinal negativo apareça
+            return valorTexto.includes('R$') ? valorTexto : "R$ " + valorTexto;
         }
 
         async function init() {
@@ -87,20 +80,24 @@
                 const data = await resp.text();
                 const linhas = data.split('\n').map(l => l.split(','));
 
-                // Banners - Ajustado para E24 (Linha índice 23)
+                // Atualizando os Banners
                 document.getElementById('patrimonio').innerText = formatarMoedaDinamica(linhas[68][2], 'patrimonio'); 
                 document.getElementById('totalCartao').innerText = formatarMoedaDinamica(linhas[42][3], 'totalCartao'); 
                 document.getElementById('totalObra').innerText = formatarMoedaDinamica(linhas[115][0], 'totalObra'); 
-                document.getElementById('valorE24').innerText = formatarMoedaDinamica(linhas[23][4], 'valorE24'); 
                 document.getElementById('pedreiro').innerText = "R$ " + linhas[101][0].replace(/[R$\s"']/g, ''); 
 
-                // Gráfico Cartões
+                // CAPTURA DIRETA DA E24 (Linha 24 = Índice 23 | Coluna E = Índice 4)
+                const celulaE24 = linhas[23][4];
+                document.getElementById('valorE24').innerText = formatarMoedaDinamica(celulaE24, 'valorE24');
+
+                // Gráfico
                 const labelsC = []; const valoresC = [];
                 for(let i=29; i<=41; i++) {
                     let nome = linhas[i][0] ? linhas[i][0].trim() : "";
                     if(nome !== "") {
                         labelsC.push(nome);
-                        valoresC.push(tratarNumero(linhas[i][3]));
+                        let val = linhas[i][3] ? linhas[i][3].replace(/[R$\s"']/g, '').replace(/\./g, '').replace(',', '.') : 0;
+                        valoresC.push(parseFloat(val) || 0);
                     }
                 }
                 new Chart(document.getElementById('chartCartoes'), {
@@ -112,7 +109,7 @@
                     options: { plugins: { legend: { display: false } } }
                 });
 
-            } catch (e) { console.error("Erro:", e); }
+            } catch (e) { console.error("Erro ao carregar:", e); }
         }
         init();
     </script>
