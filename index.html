@@ -10,33 +10,32 @@
         .banner { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 10px; border-left: 6px solid #ccc; }
         .label-link { font-size: 10px; color: #007AFF; text-transform: uppercase; font-weight: 800; text-decoration: none; display: block; margin-bottom: 4px; }
         .valor { font-size: 22px; font-weight: 900; }
+        
         .b-patrimonio { border-left-color: #2ecc71; }
         .b-cartao { border-left-color: #e74c3c; }
-        .b-sobrou { border-left-color: #3498db; }
         .b-obra { border-left-color: #f1c40f; }
-        .destaque-negativo { color: #e74c3c; }
-        .destaque-positivo { color: #2ecc71; }
-        .container-chart { background: white; padding: 15px; border-radius: 15px; margin-top: 15px; margin-bottom: 15px; }
+        .b-e25 { border-left-color: #9b59b6; } /* Cor roxa para diferenciar a E25 */
+
+        .negativo { color: #e74c3c !important; }
+        .positivo { color: #2ecc71 !important; }
+        
+        .container-chart { background: white; padding: 15px; border-radius: 15px; margin-top: 15px; }
         h3 { font-size: 13px; margin: 0 0 12px 0; color: #666; text-align: center; font-weight: 700; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        canvas { width: 100% !important; min-height: 400px; } /* Aumentei a altura para caber todos os nomes */
+        canvas { width: 100% !important; }
     </style>
 </head>
 <body>
 
-    <!-- BANNERS NO TOPO -->
+    <!-- SEQUÊNCIA DE BANNERS -->
+    
     <div class="banner b-patrimonio">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=C69" target="_blank" class="label-link">Patrimônio Total (C69) 🔗</a>
-        <div id="patrimonio" class="valor destaque-positivo">...</div>
+        <div id="patrimonio" class="valor">...</div>
     </div>
 
     <div class="banner b-cartao">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=D43" target="_blank" class="label-link">Total Gasto Cartões (D43) 🔗</a>
-        <div id="totalCartao" class="valor destaque-negativo">...</div>
-    </div>
-
-    <div class="banner b-sobrou">
-        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=E25" target="_blank" class="label-link">Saldo Final do Mês (E25) 🔗</a>
-        <div id="sobrou" class="valor">...</div>
+        <div id="totalCartao" class="valor negativo">...</div>
     </div>
 
     <div class="banner b-obra">
@@ -47,31 +46,39 @@
         </div>
     </div>
 
-    <!-- GRÁFICOS ABAIXO -->
-    <div class="container-chart">
-        <h3>Detalhamento Cartões (A30-D42)</h3>
-        <canvas id="chartCartoes"></canvas>
+    <!-- BANNER DA E25 (APÓS OBRA E ANTES DO GRÁFICO) -->
+    <div class="banner b-e25">
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=E25" target="_blank" class="label-link">Valor Célula E25 🔗</a>
+        <div id="valorE25" class="valor">...</div>
     </div>
 
+    <!-- GRÁFICO -->
     <div class="container-chart">
-        <h3>Resumo de Gastos (B10-E24)</h3>
-        <canvas id="chartGastosFixos"></canvas>
+        <h3>Detalhamento por Banco (A30:D42)</h3>
+        <canvas id="chartCartoes"></canvas>
     </div>
 
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg-jvZpdnoDiKmf-UK2vqyyvndNZ-aYgdh3-KIcwwO_HwHclFraXE5Kp6XQGBlQU4XRvVQ8Qk6colM/pub?gid=1125809191&single=true&output=csv';
 
-        function tratarNumero(texto) {
-            if (!texto || texto.trim() === "") return 0;
-            // Remove R$, aspas e espaços. Converte formato BR (1.000,00) para US (1000.00)
-            let n = texto.replace(/[R$\s"']/g, '').replace(/\./g, '').replace(',', '.');
-            return parseFloat(n) || 0;
+        function formatarMoedaDinamica(texto, elementoId) {
+            if (!texto) return "R$ 0,00";
+            let valorLimpo = texto.replace(/[R$\s"']/g, '').trim();
+            let elemento = document.getElementById(elementoId);
+            
+            if (valorLimpo.includes('-')) {
+                elemento.classList.add('negativo');
+            } else if (elementoId === 'patrimonio' || elementoId === 'valorE25') {
+                elemento.classList.add('positivo');
+            }
+            
+            return "R$ " + valorLimpo;
         }
 
-        function formatarMoeda(texto) {
-            if (!texto) return "R$ 0,00";
-            let limpo = texto.replace(/[R$\s"']/g, '').trim();
-            return "R$ " + limpo;
+        function tratarNumero(texto) {
+            if (!texto) return 0;
+            let n = texto.replace(/[R$\s"']/g, '').replace(/\./g, '').replace(',', '.');
+            return parseFloat(n) || 0;
         }
 
         async function init() {
@@ -80,61 +87,29 @@
                 const data = await resp.text();
                 const linhas = data.split('\n').map(l => l.split(','));
 
-                // Atualizando Banners
-                document.getElementById('patrimonio').innerText = formatarMoeda(linhas[68][2]); 
-                document.getElementById('totalCartao').innerText = formatarMoeda(linhas[42][3]); 
-                document.getElementById('totalObra').innerText = formatarMoeda(linhas[115][0]); 
-                document.getElementById('pedreiro').innerText = formatarMoeda(linhas[101][0]); 
+                // Banners
+                document.getElementById('patrimonio').innerText = formatarMoedaDinamica(linhas[68][2], 'patrimonio'); 
+                document.getElementById('totalCartao').innerText = formatarMoedaDinamica(linhas[42][3], 'totalCartao'); 
+                document.getElementById('totalObra').innerText = formatarMoedaDinamica(linhas[115][0], 'totalObra'); 
+                document.getElementById('valorE25').innerText = formatarMoedaDinamica(linhas[24][4], 'valorE25'); 
+                document.getElementById('pedreiro').innerText = "R$ " + linhas[101][0].replace(/[R$\s"']/g, ''); 
 
-                const vSobrou = linhas[24][4]; 
-                const elSobrou = document.getElementById('sobrou');
-                elSobrou.innerText = formatarMoeda(vSobrou);
-                elSobrou.className = (vSobrou && vSobrou.includes('-')) ? 'valor destaque-negativo' : 'valor destaque-positivo';
-
-                // GRÁFICO 1: CARTÕES
+                // Gráfico Cartões
                 const labelsC = []; const valoresC = [];
                 for(let i=29; i<=41; i++) {
-                    let nome = linhas[i][0] ? linhas[i][0].trim() : "Banco " + (i-28);
-                    labelsC.push(nome);
-                    valoresC.push(tratarNumero(linhas[i][3]));
+                    let nome = linhas[i][0] ? linhas[i][0].trim() : "";
+                    if(nome !== "") {
+                        labelsC.push(nome);
+                        valoresC.push(tratarNumero(linhas[i][3]));
+                    }
                 }
                 new Chart(document.getElementById('chartCartoes'), {
                     type: 'bar',
                     data: {
                         labels: labelsC,
-                        datasets: [{ data: valoresC, backgroundColor: '#e74c3c', borderRadius: 4 }]
+                        datasets: [{ data: valoresC, backgroundColor: '#e74c3c', borderRadius: 6 }]
                     },
                     options: { plugins: { legend: { display: false } } }
-                });
-
-                // GRÁFICO 2: GASTOS (B10-B24 e E10-E24) - FORÇANDO LEITURA DE TODAS AS LINHAS
-                const labelsG = []; const valoresG = [];
-                for(let i=9; i<=23; i++) {
-                    // Pega o nome na coluna B. Se estiver vazio, coloca "Item X"
-                    let nomeGasto = (linhas[i][1] && linhas[i][1].trim() !== "") ? linhas[i][1].trim() : "Linha " + (i+1);
-                    // Puxa o valor da coluna E (índice 4)
-                    let valorGasto = tratarNumero(linhas[i][4]); 
-                    
-                    labelsG.push(nomeGasto);
-                    valoresG.push(valorGasto);
-                }
-
-                new Chart(document.getElementById('chartGastosFixos'), {
-                    type: 'bar',
-                    data: {
-                        labels: labelsG,
-                        datasets: [{ 
-                            label: 'R$',
-                            data: valoresG, 
-                            backgroundColor: valoresG.map(v => v < 0 ? '#e74c3c' : '#3498db'),
-                            borderRadius: 4
-                        }]
-                    },
-                    options: { 
-                        indexAxis: 'y', 
-                        maintainAspectRatio: false, // Permite que o gráfico use a altura definida no CSS
-                        plugins: { legend: { display: false } }
-                    }
                 });
 
             } catch (e) { console.error("Erro:", e); }
