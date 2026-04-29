@@ -14,7 +14,7 @@
         .b-patrimonio { border-left-color: #2ecc71; }
         .b-cartao { border-left-color: #e74c3c; }
         .b-obra { border-left-color: #f1c40f; }
-        .b-e25 { border-left-color: #9b59b6; } /* Cor roxa para diferenciar a E25 */
+        .b-e24 { border-left-color: #9b59b6; }
 
         .negativo { color: #e74c3c !important; }
         .positivo { color: #2ecc71 !important; }
@@ -46,10 +46,10 @@
         </div>
     </div>
 
-    <!-- BANNER DA E25 (APÓS OBRA E ANTES DO GRÁFICO) -->
-    <div class="banner b-e25">
-        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=E25" target="_blank" class="label-link">Valor Célula E25 🔗</a>
-        <div id="valorE25" class="valor">...</div>
+    <!-- BANNER ATUALIZADO: MENSAL PÓS CONTAS (E24) -->
+    <div class="banner b-e24">
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=E24" target="_blank" class="label-link">Mensal Pós Contas (E24) 🔗</a>
+        <div id="valorE24" class="valor">...</div>
     </div>
 
     <!-- GRÁFICO -->
@@ -68,7 +68,7 @@
             
             if (valorLimpo.includes('-')) {
                 elemento.classList.add('negativo');
-            } else if (elementoId === 'patrimonio' || elementoId === 'valorE25') {
+            } else if (elementoId === 'patrimonio' || elementoId === 'valorE24') {
                 elemento.classList.add('positivo');
             }
             
@@ -87,11 +87,11 @@
                 const data = await resp.text();
                 const linhas = data.split('\n').map(l => l.split(','));
 
-                // Banners
+                // Banners - Ajustado para E24 (Linha índice 23)
                 document.getElementById('patrimonio').innerText = formatarMoedaDinamica(linhas[68][2], 'patrimonio'); 
                 document.getElementById('totalCartao').innerText = formatarMoedaDinamica(linhas[42][3], 'totalCartao'); 
                 document.getElementById('totalObra').innerText = formatarMoedaDinamica(linhas[115][0], 'totalObra'); 
-                document.getElementById('valorE25').innerText = formatarMoedaDinamica(linhas[24][4], 'valorE25'); 
+                document.getElementById('valorE24').innerText = formatarMoedaDinamica(linhas[23][4], 'valorE24'); 
                 document.getElementById('pedreiro').innerText = "R$ " + linhas[101][0].replace(/[R$\s"']/g, ''); 
 
                 // Gráfico Cartões
