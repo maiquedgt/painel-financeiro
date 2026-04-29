@@ -8,12 +8,14 @@
     <style>
         body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .card { background: white; padding: 15px; border-radius: 12px; shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 10px; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 10px; }
         .label { font-size: 12px; color: #666; text-transform: uppercase; }
         .valor { font-size: 20px; font-weight: bold; margin-top: 5px; }
         .destaque-negativo { color: #e74c3c; }
         .destaque-positivo { color: #2ecc71; }
         .obra { border-left: 5px solid #f1c40f; }
+        /* Estilo para o negrito que você pediu */
+        .negrito-enfase { font-weight: 800; color: #333; }
     </style>
 </head>
 <body>
@@ -37,7 +39,8 @@
     <div class="card obra">
         <div class="label">Total Obra + Pedreiro (A116)</div>
         <div id="totalObra" class="valor">...</div>
-        <div class="label" style="margin-top:10px">Só Pedreiro (A102): <span id="pedreiro">...</span></div>
+        <!-- Aqui aplicamos o negrito no valor do pedreiro -->
+        <div class="label" style="margin-top:10px">Só Pedreiro (A102): <span id="pedreiro" class="negrito-enfase">...</span></div>
     </div>
 
     <div class="card">
@@ -48,31 +51,60 @@
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg-jvZpdnoDiKmf-UK2vqyyvndNZ-aYgdh3-KIcwwO_HwHclFraXE5Kp6XQGBlQU4XRvVQ8Qk6colM/pub?gid=1125809191&single=true&output=csv';
 
         async function fetchData() {
-            const resp = await fetch(csvUrl);
-            const csv = await resp.text();
-            const linhas = csv.split('\n').map(l => l.split(','));
+            try {
+                const resp = await fetch(csvUrl);
+                const csv = await resp.text();
+                const linhas = csv.split('\n').map(l => l.split(','));
 
-            // Função para limpar e formatar moeda
-            const fmt = (v) => v ? "R$ " + v.trim() : "R$ 0,00";
+                // Função para limpar e formatar
+                const fmt = (v) => {
+                    if (!v) return "R$ 0,00";
+                    let valorLimpo = v.trim();
+                    // Se o valor começar com "-", ele já mantém o sinal
+                    return "R$ " + valorLimpo;
+                };
 
-            // Mapeamento baseado no seu relato (ajustado para índice 0)
-            document.getElementById('patrimonio').innerText = fmt(linhas[68][2]); // C69
-            document.getElementById('gastosCartao').innerText = fmt(linhas[42][3]); // D43
-            document.getElementById('sobrou').innerText = fmt(linhas[24][4]); // E25
-            document.getElementById('totalObra').innerText = fmt(linhas[115][0]); // A116
-            document.getElementById('pedreiro').innerText = fmt(linhas[101][0]); // A102
+                // AJUSTE DE COORDENADAS (Coluna A=0, B=1, C=2, D=3, E=4)
+                // Linha no código = Número da linha na planilha menos 1
+                
+                const valPatrimonio = linhas[68][2]; // C69
+                const valGastos = linhas[42][3];     // D43
+                const valSobrou = linhas[24][4];     // E25 (Ajustado para coluna E)
+                const valTotalObra = linhas[115][0]; // A116
+                const valPedreiro = linhas[101][0];  // A102
 
-            // Gráfico Simples de Gastos x Patrimônio
-            new Chart(document.getElementById('graficoResumo'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Cartão', 'Patrimônio'],
-                    datasets: [{
-                        data: [parseFloat(linhas[42][3]) || 0, parseFloat(linhas[68][2]) || 0],
-                        backgroundColor: ['#e74c3c', '#2ecc71']
-                    }]
+                document.getElementById('patrimonio').innerText = fmt(valPatrimonio);
+                document.getElementById('gastosCartao').innerText = fmt(valGastos);
+                
+                // Lógica de cor para o "Sobrou"
+                const elementoSobrou = document.getElementById('sobrou');
+                elementoSobrou.innerText = fmt(valSobrou);
+                if (valSobrou.includes('-')) {
+                    elementoSobrou.className = 'valor destaque-negativo';
+                } else {
+                    elementoSobrou.className = 'valor destaque-positivo';
                 }
-            });
+
+                document.getElementById('totalObra').innerText = fmt(valTotalObra);
+                document.getElementById('pedreiro').innerText = fmt(valPedreiro);
+
+                // Atualiza Gráfico
+                new Chart(document.getElementById('graficoResumo'), {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Gasto Cartão', 'Patrimônio'],
+                        datasets: [{
+                            data: [
+                                parseFloat(valGastos.replace('.','').replace(',','.')) || 0, 
+                                parseFloat(valPatrimonio.replace('.','').replace(',','.')) || 0
+                            ],
+                            backgroundColor: ['#e74c3c', '#2ecc71']
+                        }]
+                    }
+                });
+            } catch (e) {
+                console.error("Erro ao ler planilha", e);
+            }
         }
         fetchData();
     </script>
