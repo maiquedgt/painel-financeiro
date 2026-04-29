@@ -10,18 +10,15 @@
         .banner { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); margin-bottom: 10px; border-left: 6px solid #ccc; }
         .label-link { font-size: 10px; color: #007AFF; text-transform: uppercase; font-weight: 800; text-decoration: none; display: block; margin-bottom: 4px; }
         .valor { font-size: 22px; font-weight: 900; }
-        
         .b-patrimonio { border-left-color: #2ecc71; }
         .b-cartao { border-left-color: #e74c3c; }
         .b-sobrou { border-left-color: #3498db; }
         .b-obra { border-left-color: #f1c40f; }
-
         .destaque-negativo { color: #e74c3c; }
         .destaque-positivo { color: #2ecc71; }
-        
         .container-chart { background: white; padding: 15px; border-radius: 15px; margin-top: 15px; margin-bottom: 15px; }
         h3 { font-size: 13px; margin: 0 0 12px 0; color: #666; text-align: center; font-weight: 700; border-bottom: 1px solid #eee; padding-bottom: 5px; }
-        canvas { width: 100% !important; }
+        canvas { width: 100% !important; min-height: 400px; } /* Aumentei a altura para caber todos os nomes */
     </style>
 </head>
 <body>
@@ -65,8 +62,9 @@
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg-jvZpdnoDiKmf-UK2vqyyvndNZ-aYgdh3-KIcwwO_HwHclFraXE5Kp6XQGBlQU4XRvVQ8Qk6colM/pub?gid=1125809191&single=true&output=csv';
 
         function tratarNumero(texto) {
-            if (!texto) return 0;
-            let n = texto.replace(/[R$\s"']/g, '').replace('.', '').replace(',', '.');
+            if (!texto || texto.trim() === "") return 0;
+            // Remove R$, aspas e espaços. Converte formato BR (1.000,00) para US (1000.00)
+            let n = texto.replace(/[R$\s"']/g, '').replace(/\./g, '').replace(',', '.');
             return parseFloat(n) || 0;
         }
 
@@ -82,7 +80,7 @@
                 const data = await resp.text();
                 const linhas = data.split('\n').map(l => l.split(','));
 
-                // Banners
+                // Atualizando Banners
                 document.getElementById('patrimonio').innerText = formatarMoeda(linhas[68][2]); 
                 document.getElementById('totalCartao').innerText = formatarMoeda(linhas[42][3]); 
                 document.getElementById('totalObra').innerText = formatarMoeda(linhas[115][0]); 
@@ -91,16 +89,14 @@
                 const vSobrou = linhas[24][4]; 
                 const elSobrou = document.getElementById('sobrou');
                 elSobrou.innerText = formatarMoeda(vSobrou);
-                elSobrou.className = vSobrou.includes('-') ? 'valor destaque-negativo' : 'valor destaque-positivo';
+                elSobrou.className = (vSobrou && vSobrou.includes('-')) ? 'valor destaque-negativo' : 'valor destaque-positivo';
 
-                // GRÁFICO 1: CARTÕES (A=0, D=3)
+                // GRÁFICO 1: CARTÕES
                 const labelsC = []; const valoresC = [];
                 for(let i=29; i<=41; i++) {
-                    let nome = linhas[i][0] ? linhas[i][0].trim() : "";
-                    if(nome !== "") {
-                        labelsC.push(nome);
-                        valoresC.push(tratarNumero(linhas[i][3]));
-                    }
+                    let nome = linhas[i][0] ? linhas[i][0].trim() : "Banco " + (i-28);
+                    labelsC.push(nome);
+                    valoresC.push(tratarNumero(linhas[i][3]));
                 }
                 new Chart(document.getElementById('chartCartoes'), {
                     type: 'bar',
@@ -111,17 +107,16 @@
                     options: { plugins: { legend: { display: false } } }
                 });
 
-                // GRÁFICO 2: GASTOS (B=1, E=4)
+                // GRÁFICO 2: GASTOS (B10-B24 e E10-E24) - FORÇANDO LEITURA DE TODAS AS LINHAS
                 const labelsG = []; const valoresG = [];
                 for(let i=9; i<=23; i++) {
-                    let nomeGasto = linhas[i][1] ? linhas[i][1].trim() : ""; 
+                    // Pega o nome na coluna B. Se estiver vazio, coloca "Item X"
+                    let nomeGasto = (linhas[i][1] && linhas[i][1].trim() !== "") ? linhas[i][1].trim() : "Linha " + (i+1);
                     // Puxa o valor da coluna E (índice 4)
-                    let valorGasto = linhas[i][4]; 
+                    let valorGasto = tratarNumero(linhas[i][4]); 
                     
-                    if(nomeGasto !== "" && valorGasto !== undefined) {
-                        labelsG.push(nomeGasto);
-                        valoresG.push(tratarNumero(valorGasto));
-                    }
+                    labelsG.push(nomeGasto);
+                    valoresG.push(valorGasto);
                 }
 
                 new Chart(document.getElementById('chartGastosFixos'), {
@@ -137,12 +132,12 @@
                     },
                     options: { 
                         indexAxis: 'y', 
-                        plugins: { legend: { display: false } },
-                        scales: { x: { grid: { display: true } } }
+                        maintainAspectRatio: false, // Permite que o gráfico use a altura definida no CSS
+                        plugins: { legend: { display: false } }
                     }
                 });
 
-            } catch (e) { console.error(e); }
+            } catch (e) { console.error("Erro:", e); }
         }
         init();
     </script>
