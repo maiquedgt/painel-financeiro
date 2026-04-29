@@ -17,19 +17,25 @@
         .b-moto { border-left-color: #f39c12; }
         .b-obra { border-left-color: #7f8c8d; }
 
-        /* Cores Específicas dos Valores */
-        .cor-moto { color: #f39c12 !important; }
-        .cor-cartao { color: #e74c3c !important; }
+        /* Cores Gerais */
         .cor-patrimonio { color: #2ecc71 !important; }
         .cor-padrao { color: #333 !important; } 
 
-        /* NOVAS CORES COM CONTORNO (MOTO PORTUGAL) */
-        .cor-moto-alerta { 
+        /* ESTILOS COM CONTORNO PRETO PARA DESTAQUE */
+        .status-verde { 
+            color: #2ecc71 !important; 
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; 
+        }
+        .status-amarelo { 
             color: #ffff00 !important; 
             text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; 
         }
-        .cor-moto-sucesso { 
-            color: #2ecc71 !important; 
+        .status-vermelho { 
+            color: #e74c3c !important; 
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; 
+        }
+        .status-laranja { 
+            color: #f39c12 !important; 
             text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; 
         }
         
@@ -45,16 +51,16 @@
         <div id="patrimonio" class="valor cor-patrimonio">...</div>
     </div>
 
-    <!-- CARTÃO -->
+    <!-- CARTÃO (DINÂMICO) -->
     <div class="banner b-cartao">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=D43" target="_blank" class="label-link">Total Gasto Cartões (D43) 🔗</a>
-        <div id="totalCartao" class="valor cor-cartao">...</div>
+        <div id="totalCartao" class="valor">...</div>
     </div>
 
     <!-- MOTO (DINÂMICO) -->
     <div class="banner b-moto">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=I64" target="_blank" class="label-link">Total da Moto PT (I64) 🔗</a>
-        <div id="totalMoto" class="valor cor-moto">...</div>
+        <div id="totalMoto" class="valor">...</div>
     </div>
 
     <!-- OBRA -->
@@ -81,45 +87,59 @@
             return valor.includes('R$') ? valor : "R$ " + valor;
         }
 
+        function converterParaNumero(texto) {
+            if (!texto) return 0;
+            let limpo = texto.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+            return parseFloat(limpo) || 0;
+        }
+
         async function init() {
             try {
                 const resp = await fetch(csvUrl);
                 const data = await resp.text();
                 const linhas = data.split('\n').map(l => l.split(','));
 
-                // Preenchimento dos Banners
+                // Banners Estáticos
                 document.getElementById('patrimonio').innerText = formatarLimpo(linhas[68][2]); // C69
-                document.getElementById('totalCartao').innerText = formatarLimpo(linhas[42][3]); // D43
                 document.getElementById('totalObra').innerText = formatarLimpo(linhas[115][0]); // A116
                 document.getElementById('pedreiro').innerText = formatarLimpo(linhas[101][0]); // A102
 
-                // --- LÓGICA DINÂMICA DA MOTO ---
-                const valorMotoTexto = linhas[63][8]; // I64
-                const elementoMoto = document.getElementById('totalMoto');
-                elementoMoto.innerText = formatarLimpo(valorMotoTexto);
-
-                // Converter para número para testar as faixas
-                let numMoto = valorMotoTexto.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
-                numMoto = parseFloat(numMoto) || 0;
-
-                // Reset de classes e aplicação das novas regras
-                elementoMoto.classList.remove('cor-moto', 'cor-moto-alerta', 'cor-moto-sucesso');
+                // --- LÓGICA DINÂMICA: CARTÕES ---
+                const valorCartaoTexto = linhas[42][3]; // D43
+                const elCartao = document.getElementById('totalCartao');
+                const numCartao = converterParaNumero(valorCartaoTexto);
+                elCartao.innerText = formatarLimpo(valorCartaoTexto);
                 
-                if (numMoto > 0 && numMoto <= 300) {
-                    elementoMoto.classList.add('cor-moto-sucesso'); // Verde com borda
-                } else if (numMoto > 300 && numMoto <= 700) {
-                    elementoMoto.classList.add('cor-moto-alerta');  // Amarelo com borda
+                elCartao.className = 'valor'; // Reseta
+                if (numCartao <= 500) {
+                    elCartao.classList.add('status-verde');
+                } else if (numCartao > 500 && numCartao <= 1000) {
+                    elCartao.classList.add('status-amarelo');
                 } else {
-                    elementoMoto.classList.add('cor-moto');         // Laranja padrão
+                    elCartao.classList.add('status-vermelho');
                 }
 
-                // Gráfico
+                // --- LÓGICA DINÂMICA: MOTO ---
+                const valorMotoTexto = linhas[63][8]; // I64
+                const elMoto = document.getElementById('totalMoto');
+                const numMoto = converterParaNumero(valorMotoTexto);
+                elMoto.innerText = formatarLimpo(valorMotoTexto);
+                
+                elMoto.className = 'valor'; // Reseta
+                if (numMoto > 0 && numMoto <= 300) {
+                    elMoto.classList.add('status-verde');
+                } else if (numMoto > 300 && numMoto <= 700) {
+                    elMoto.classList.add('status-amarelo');
+                } else {
+                    elMoto.classList.add('status-laranja');
+                }
+
+                // Gráfico de Barras
                 const labelsC = []; const valoresC = [];
                 for(let i=29; i<=41; i++) {
                     if(linhas[i] && linhas[i][0]) {
                         labelsC.push(linhas[i][0].trim());
-                        let val = linhas[i][3] ? linhas[i][3].replace(/[R$\s"']/g, '').replace(/\./g, '').replace(',', '.') : 0;
-                        valoresC.push(parseFloat(val) || 0);
+                        valoresC.push(converterParaNumero(linhas[i][3]));
                     }
                 }
                 new Chart(document.getElementById('chartCartoes'), {
