@@ -9,43 +9,61 @@
         body { font-family: -apple-system, sans-serif; background: #f0f2f5; margin: 0; padding: 15px; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); margin-bottom: 10px; }
-        .label { font-size: 11px; color: #666; text-transform: uppercase; letter-spacing: 0.5px; }
-        .valor { font-size: 19px; font-weight: bold; margin-top: 5px; color: #333; }
+        
+        /* Estilo para deixar os nomes com cara de link clicável */
+        .label-link { 
+            font-size: 11px; 
+            color: #007AFF; 
+            text-transform: uppercase; 
+            letter-spacing: 0.5px; 
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 5px;
+        }
+        .label-link:active { opacity: 0.5; }
+
+        .valor { font-size: 19px; font-weight: bold; color: #333; }
         .destaque-negativo { color: #e74c3c !important; }
         .destaque-positivo { color: #2ecc71 !important; }
         .obra { border-left: 5px solid #f1c40f; }
-        /* Negrito solicitado na marcação verde */
         .negrito-verde { font-weight: 900; color: #000; font-size: 16px; }
     </style>
 </head>
 <body>
 
+    <!-- Link para a célula C69 -->
     <div class="card">
-        <div class="label">PATRIMÔNIO TOTAL (C69)</div>
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=C69" target="_blank" class="label-link">PATRIMÔNIO TOTAL (C69) 🔗</a>
         <div id="patrimonio" class="valor destaque-positivo">...</div>
     </div>
 
     <div class="grid">
+        <!-- Link para a célula D43 -->
         <div class="card">
-            <div class="label">GASTO CARTÕES (D43)</div>
+            <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=D43" target="_blank" class="label-link">CARTÕES (D43) 🔗</a>
             <div id="gastosCartao" class="valor destaque-negativo">...</div>
         </div>
+        <!-- Link para a célula E25 -->
         <div class="card">
-            <div class="label">SOBROU (E25)</div>
+            <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=E25" target="_blank" class="label-link">SOBROU (E25) 🔗</a>
             <div id="sobrou" class="valor">...</div>
         </div>
     </div>
 
     <div class="card obra">
-        <div class="label">TOTAL OBRA + PEDREIRO (A116)</div>
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=A116" target="_blank" class="label-link">TOTAL OBRA (A116) 🔗</a>
         <div id="totalObra" class="valor" style="color: #000;">...</div>
-        <div class="label" style="margin-top:10px; color: #444;">
-            SÓ PEDREIRO (A102): <span id="pedreiro" class="negrito-verde">...</span>
+        
+        <div style="margin-top:15px;">
+            <!-- Link para a célula A102 -->
+            <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=A102" target="_blank" class="label-link">SÓ PEDREIRO (A102) 🔗</a>
+            <br>
+            <span id="pedreiro" class="negrito-verde">...</span>
         </div>
     </div>
 
     <div class="card">
-        <canvas id="graficoResumo" style="max-height: 200px;"></canvas>
+        <canvas id="graficoResumo" style="max-height: 180px;"></canvas>
     </div>
 
     <script>
@@ -55,33 +73,26 @@
             try {
                 const resp = await fetch(csvUrl);
                 const csv = await resp.text();
-                // O split por vírgula pode falhar se o Google usar ponto e vírgula no seu país, 
-                // mas para CSV público geralmente é vírgula.
                 const linhas = csv.split('\n').map(l => l.split(','));
 
-                // Função de limpeza profunda para evitar o erro do print (R$ "R$)
                 const limparMoeda = (texto) => {
                     if (!texto) return "R$ 0,00";
-                    // Remove R$, aspas, espaços e mantém apenas números, vírgula, ponto e o sinal de menos
                     let limpo = texto.replace(/[R$\s"']/g, '').trim();
                     return "R$ " + limpo;
                 };
 
-                // Pegando os valores (Índice da Linha = Linha da Planilha - 1)
-                // Colunas: A=0, B=1, C=2, D=3, E=4
-                const valPatrimonio = linhas[68][2]; // C69
-                const valGastos     = linhas[42][3]; // D43
-                const valSobrou     = linhas[24][4]; // E25 (Puxando agora da Coluna E)
-                const valTotalObra  = linhas[115][0]; // A116
-                const valPedreiro   = linhas[101][0]; // A102
+                // Mapeamento das células
+                const valPatrimonio = linhas[68][2]; 
+                const valGastos     = linhas[42][3]; 
+                const valSobrou     = linhas[24][4]; 
+                const valTotalObra  = linhas[115][0]; 
+                const valPedreiro   = linhas[101][0]; 
 
-                // Inserindo nos elementos
                 document.getElementById('patrimonio').innerText = limparMoeda(valPatrimonio);
                 document.getElementById('gastosCartao').innerText = limparMoeda(valGastos);
                 document.getElementById('totalObra').innerText = limparMoeda(valTotalObra);
                 document.getElementById('pedreiro').innerText = limparMoeda(valPedreiro);
 
-                // Lógica especial para o SOBROU (Cor e Valor)
                 const campoSobrou = document.getElementById('sobrou');
                 campoSobrou.innerText = limparMoeda(valSobrou);
                 
@@ -91,12 +102,12 @@
                     campoSobrou.classList.add('destaque-positivo');
                 }
 
-                // Gráfico
+                // Gráfico simplificado
                 const ctx = document.getElementById('graficoResumo').getContext('2d');
                 new Chart(ctx, {
                     type: 'bar',
                     data: {
-                        labels: ['Gasto Cartão', 'Sobrou'],
+                        labels: ['Cartão', 'Sobrou'],
                         datasets: [{
                             data: [
                                 parseFloat(valGastos.replace('.','').replace(',','.')) || 0,
@@ -109,10 +120,9 @@
                 });
 
             } catch (error) {
-                console.error("Erro:", error);
+                console.error("Erro no carregamento:", error);
             }
         }
-
         fetchData();
     </script>
 </body>
