@@ -18,10 +18,9 @@
         .b-obra { border-left-color: #7f8c8d; }
 
         /* Cores Gerais */
-        .cor-patrimonio { color: #2ecc71 !important; }
         .cor-padrao { color: #333 !important; } 
 
-        /* ESTILOS COM CONTORNO PRETO PARA DESTAQUE */
+        /* ESTILOS COM CONTORNO PRETO PARA DESTAQUE TOTAL */
         .status-verde { 
             color: #2ecc71 !important; 
             text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; 
@@ -30,12 +29,12 @@
             color: #ffff00 !important; 
             text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; 
         }
-        .status-vermelho { 
-            color: #e74c3c !important; 
-            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; 
-        }
         .status-laranja { 
             color: #f39c12 !important; 
+            text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; 
+        }
+        .status-vermelho { 
+            color: #e74c3c !important; 
             text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000; 
         }
         
@@ -45,10 +44,10 @@
 </head>
 <body>
 
-    <!-- PATRIMÔNIO -->
+    <!-- PATRIMÔNIO (DINÂMICO) -->
     <div class="banner b-patrimonio">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=C69" target="_blank" class="label-link">Patrimônio Total (C69) 🔗</a>
-        <div id="patrimonio" class="valor cor-patrimonio">...</div>
+        <div id="patrimonio" class="valor">...</div>
     </div>
 
     <!-- CARTÃO (DINÂMICO) -->
@@ -89,7 +88,14 @@
 
         function converterParaNumero(texto) {
             if (!texto) return 0;
-            let limpo = texto.replace(/[R$\s]/g, '').replace(/\./g, '').replace(',', '.');
+            let limpo = texto.replace(/[R$\s"']/g, '');
+            if (limpo.includes('.') && limpo.includes(',')) {
+                limpo = limpo.replace(/\./g, '').replace(',', '.');
+            } else if (limpo.includes(',')) {
+                limpo = limpo.replace(',', '.');
+            } else if (limpo.includes('.') && limpo.split('.').pop().length > 2) {
+                limpo = limpo.replace(/\./g, '');
+            }
             return parseFloat(limpo) || 0;
         }
 
@@ -99,42 +105,55 @@
                 const data = await resp.text();
                 const linhas = data.split('\n').map(l => l.split(','));
 
-                // Banners Estáticos
-                document.getElementById('patrimonio').innerText = formatarLimpo(linhas[68][2]); // C69
+                // Banners Fixos
                 document.getElementById('totalObra').innerText = formatarLimpo(linhas[115][0]); // A116
                 document.getElementById('pedreiro').innerText = formatarLimpo(linhas[101][0]); // A102
 
-                // --- LÓGICA DINÂMICA: CARTÕES ---
-                const valorCartaoTexto = linhas[42][3]; // D43
+                // --- LÓGICA DINÂMICA: PATRIMÔNIO (C69) ---
+                const valorPatrimonioTexto = linhas[68][2];
+                const elPatrimonio = document.getElementById('patrimonio');
+                const numPatrimonio = converterParaNumero(valorPatrimonioTexto);
+                elPatrimonio.innerText = formatarLimpo(valorPatrimonioTexto);
+                elPatrimonio.className = 'valor';
+                if (numPatrimonio >= 135000) {
+                    elPatrimonio.classList.add('status-verde');
+                } else if (numPatrimonio >= 100000) {
+                    elPatrimonio.classList.add('status-amarelo');
+                } else if (numPatrimonio >= 80000) {
+                    elPatrimonio.classList.add('status-laranja');
+                } else {
+                    elPatrimonio.classList.add('status-vermelho');
+                }
+
+                // --- LÓGICA DINÂMICA: CARTÕES (D43) ---
+                const valorCartaoTexto = linhas[42][3];
                 const elCartao = document.getElementById('totalCartao');
                 const numCartao = converterParaNumero(valorCartaoTexto);
                 elCartao.innerText = formatarLimpo(valorCartaoTexto);
-                
-                elCartao.className = 'valor'; // Reseta
+                elCartao.className = 'valor';
                 if (numCartao <= 500) {
                     elCartao.classList.add('status-verde');
-                } else if (numCartao > 500 && numCartao <= 1000) {
+                } else if (numCartao <= 1000) {
                     elCartao.classList.add('status-amarelo');
                 } else {
                     elCartao.classList.add('status-vermelho');
                 }
 
-                // --- LÓGICA DINÂMICA: MOTO ---
-                const valorMotoTexto = linhas[63][8]; // I64
+                // --- LÓGICA DINÂMICA: MOTO (I64) ---
+                const valorMotoTexto = linhas[63][8];
                 const elMoto = document.getElementById('totalMoto');
                 const numMoto = converterParaNumero(valorMotoTexto);
                 elMoto.innerText = formatarLimpo(valorMotoTexto);
-                
-                elMoto.className = 'valor'; // Reseta
+                elMoto.className = 'valor';
                 if (numMoto > 0 && numMoto <= 300) {
                     elMoto.classList.add('status-verde');
-                } else if (numMoto > 300 && numMoto <= 700) {
+                } else if (numMoto <= 700) {
                     elMoto.classList.add('status-amarelo');
                 } else {
                     elMoto.classList.add('status-laranja');
                 }
 
-                // Gráfico de Barras
+                // Gráfico
                 const labelsC = []; const valoresC = [];
                 for(let i=29; i<=41; i++) {
                     if(linhas[i] && linhas[i][0]) {
@@ -151,7 +170,7 @@
                     options: { plugins: { legend: { display: false } } }
                 });
 
-            } catch (e) { console.error("Erro ao carregar dados:", e); }
+            } catch (e) { console.error("Erro:", e); }
         }
         init();
     </script>
