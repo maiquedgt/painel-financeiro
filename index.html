@@ -11,10 +11,12 @@
         .label-link { font-size: 10px; color: #007AFF; text-transform: uppercase; font-weight: 800; text-decoration: none; display: block; margin-bottom: 4px; }
         .valor { font-size: 22px; font-weight: 900; }
         
+        /* Cores Temáticas */
         .b-patrimonio { border-left-color: #2ecc71; }
         .b-cartao { border-left-color: #e74c3c; }
-        .b-obra { border-left-color: #f1c40f; }
-        .b-e24 { border-left-color: #9b59b6; }
+        .b-moto { border-left-color: #f39c12; }
+        .b-obra { border-left-color: #7f8c8d; }
+        .b-info { border-left-color: #3498db; }
 
         .negativo { color: #e74c3c !important; }
         .positivo { color: #2ecc71 !important; }
@@ -25,6 +27,7 @@
 </head>
 <body>
 
+    <!-- BLOCO 1: FINANCEIRO E MOTO -->
     <div class="banner b-patrimonio">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=C69" target="_blank" class="label-link">Patrimônio Total (C69) 🔗</a>
         <div id="patrimonio" class="valor">...</div>
@@ -35,20 +38,28 @@
         <div id="totalCartao" class="valor negativo">...</div>
     </div>
 
+    <div class="banner b-moto">
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=I64" target="_blank" class="label-link">Total da Moto PT (I64) 🔗</a>
+        <div id="totalMoto" class="valor">...</div>
+    </div>
+
+    <!-- BLOCO 2: OBRA E PONTOS ESPECÍFICOS -->
     <div class="banner b-obra">
         <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=A116" target="_blank" class="label-link">Total Geral Obra (A116) 🔗</a>
         <div id="totalObra" class="valor">...</div>
-        <div style="margin-top: 8px; font-size: 13px; font-weight: 700;">
-            SÓ PEDREIRO (A102): <span id="pedreiro" style="color: #d35400;">...</span>
-        </div>
     </div>
 
-    <!-- BANNER MENSAL PÓS CONTAS -->
-    <div class="banner b-e24">
-        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=E24" target="_blank" class="label-link">Mensal Pós Contas (E24) 🔗</a>
-        <div id="valorE24" class="valor">...</div>
+    <div class="banner b-info">
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=H47" target="_blank" class="label-link">Dias Úteis Nesse Mês (H47) 🔗</a>
+        <div id="diasUteis" class="valor" style="color: #2c3e50;">...</div>
     </div>
 
+    <div class="banner b-info">
+        <a href="https://docs.google.com/spreadsheets/d/1DSrWfTWN8LkafklUkuh0N4lBwarwvuda83TkWJghnSo/edit#gid=1125809191&range=O23" target="_blank" class="label-link">Rendimento CDB Mês (O23) 🔗</a>
+        <div id="rendimentoCDB" class="valor positivo">...</div>
+    </div>
+
+    <!-- GRÁFICO (MANTIDO) -->
     <div class="container-chart">
         <h3>Detalhamento por Banco (A30:D42)</h3>
         <canvas id="chartCartoes"></canvas>
@@ -57,20 +68,18 @@
     <script>
         const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTg-jvZpdnoDiKmf-UK2vqyyvndNZ-aYgdh3-KIcwwO_HwHclFraXE5Kp6XQGBlQU4XRvVQ8Qk6colM/pub?gid=1125809191&single=true&output=csv';
 
-        function formatarMoedaDinamica(texto, elementoId) {
-            if (!texto || texto.trim() === "") return "R$ 0,00";
-            
+        function formatarValor(texto, elementoId, isMoeda = true) {
+            if (!texto || texto.trim() === "") return isMoeda ? "R$ 0,00" : "0";
             let elemento = document.getElementById(elementoId);
             let valorTexto = texto.trim();
 
-            // Detecta se é negativo pelo sinal de menos vindo da planilha
             if (valorTexto.includes('-')) {
                 elemento.classList.add('negativo');
-            } else if (elementoId !== 'totalObra' && elementoId !== 'totalCartao') {
+            } else if (isMoeda && elementoId !== 'totalObra') {
                 elemento.classList.add('positivo');
             }
             
-            // Retorna o valor com R$ na frente, garantindo que o sinal negativo apareça
+            if (!isMoeda) return valorTexto;
             return valorTexto.includes('R$') ? valorTexto : "R$ " + valorTexto;
         }
 
@@ -80,17 +89,15 @@
                 const data = await resp.text();
                 const linhas = data.split('\n').map(l => l.split(','));
 
-                // Atualizando os Banners
-                document.getElementById('patrimonio').innerText = formatarMoedaDinamica(linhas[68][2], 'patrimonio'); 
-                document.getElementById('totalCartao').innerText = formatarMoedaDinamica(linhas[42][3], 'totalCartao'); 
-                document.getElementById('totalObra').innerText = formatarMoedaDinamica(linhas[115][0], 'totalObra'); 
-                document.getElementById('pedreiro').innerText = "R$ " + linhas[101][0].replace(/[R$\s"']/g, ''); 
+                // Mapeamento dos Banners
+                document.getElementById('patrimonio').innerText = formatarValor(linhas[68][2], 'patrimonio'); // C69
+                document.getElementById('totalCartao').innerText = formatarValor(linhas[42][3], 'totalCartao'); // D43
+                document.getElementById('totalMoto').innerText = formatarValor(linhas[63][8], 'totalMoto'); // I64 (Linha 64, Coluna I=8)
+                document.getElementById('totalObra').innerText = formatarValor(linhas[115][0], 'totalObra'); // A116
+                document.getElementById('diasUteis').innerText = formatarValor(linhas[46][7], 'diasUteis', false); // H47 (Linha 47, Coluna H=7)
+                document.getElementById('rendimentoCDB').innerText = formatarValor(linhas[22][14], 'rendimentoCDB'); // O23 (Linha 23, Coluna O=14)
 
-                // CAPTURA DIRETA DA E24 (Linha 24 = Índice 23 | Coluna E = Índice 4)
-                const celulaE24 = linhas[23][4];
-                document.getElementById('valorE24').innerText = formatarMoedaDinamica(celulaE24, 'valorE24');
-
-                // Gráfico
+                // Gráfico de Cartões
                 const labelsC = []; const valoresC = [];
                 for(let i=29; i<=41; i++) {
                     let nome = linhas[i][0] ? linhas[i][0].trim() : "";
